@@ -1,14 +1,14 @@
 from app.core.database import execute_query
 
-def insert_document(filename, file_type, file_size, minio_path):
+def insert_document(filename, file_type, file_size, minio_path, collection_id):
     query = """
-        INSERT INTO documents (filename, file_type, file_size, minio_path, status)
-        VALUES (%s, %s, %s, %s, 'pending')
+        INSERT INTO documents (filename, file_type, file_size, minio_path, status, collection_id)
+        VALUES (%s, %s, %s, %s, 'pending', %s)
         RETURNING id
     """
     result = execute_query(
         query,
-        (filename, file_type, file_size, minio_path),
+        (filename, file_type, file_size, minio_path, collection_id),
         fetch=True
     )
     return result[0]["id"]

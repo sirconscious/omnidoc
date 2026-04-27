@@ -156,16 +156,24 @@ def ingest(file_path_str: str) -> None:
 
     print(f"\n Ingesting: {filename}  ({file_size:,} bytes)")
 
+    collection_id = "acf3a192-c113-4ae3-acba-994d300419dd" #this shit needs to be changes 
+
+
     # ── Step 1 · upload raw file to MinIO ─────────────────────────────────────
     print("  [1/4] Uploading raw file → MinIO …")
     file_bytes  = file_path.read_bytes()
-    minio_key   = f"raw/{doc_id}/{filename}"
+    minio_key = f"raw/{collection_id}/{doc_id}/{filename}"
     minio_path  = minio_upload(file_bytes, minio_key, mime_type)
 
     # ── Step 2 · insert metadata row (status = pending) ───────────────────────
     print("  [2/4] Inserting metadata → PostgreSQL …")
-    db_id = insert_document(filename, file_type, file_size, minio_path)
-
+    db_id = insert_document(
+        filename,
+        file_type,
+        file_size,
+        minio_path,
+        collection_id
+    )
     try:
         # ── Step 3 · extract text + build JSON ────────────────────────────────
         print("  [3/4] Extracting text & building JSON …")
@@ -183,7 +191,7 @@ def ingest(file_path_str: str) -> None:
         # ── Step 4 · store parsed JSON back in MinIO ──────────────────────────
         print("  [4/4] Uploading parsed JSON → MinIO …")
         json_bytes   = json.dumps(doc_json, ensure_ascii=False, indent=2).encode("utf-8")
-        json_key     = f"parsed/{db_id}/{file_path.stem}.json"
+        json_key = f"parsed/{collection_id}/{db_id}/{file_path.stem}.json"
         minio_upload(json_bytes, json_key, "application/json")
 
         # ── mark done ─────────────────────────────────────────────────────────
