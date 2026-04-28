@@ -1,0 +1,11 @@
+# Core dependencies
+pdfplumber
+python-docx
+python-dotenv
+psycopg2-binary
+minio
+
+# OCR support (optional - for scanned PDFs)
+pytesseract
+Pillow
+pdf2image

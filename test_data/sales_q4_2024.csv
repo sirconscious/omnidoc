@@ -1,0 +1,26 @@
+date,client_name,product,category,quantity,unit_price,total,sales_rep,region,status
+2024-10-01,Acme Corporation,Enterprise License,Software,5,4200.00,21000.00,Sarah Connor,North,paid
+2024-10-03,Initech Ltd,Consulting Hours,Services,40,250.00,10000.00,John Smith,East,paid
+2024-10-07,Umbrella Corp,Data Analytics Package,Software,1,8500.00,8500.00,Sarah Connor,South,paid
+2024-10-11,Soylent Inc,Support Contract,Services,1,3600.00,3600.00,Mike Torres,West,paid
+2024-10-14,Gekko & Associates,Enterprise License,Software,3,4200.00,12600.00,John Smith,East,pending
+2024-10-18,Acme Corporation,Consulting Hours,Services,24,250.00,6000.00,Sarah Connor,North,paid
+2024-10-22,Initech Ltd,Hardware Bundle,Hardware,10,1200.00,12000.00,Lisa Park,East,paid
+2024-10-28,Globex Corp,Premium Support,Services,1,5000.00,5000.00,Mike Torres,West,paid
+2024-11-01,Umbrella Corp,Consulting Hours,Services,60,250.00,15000.00,John Smith,South,paid
+2024-11-05,Cyberdyne Systems,Enterprise License,Software,8,4200.00,33600.00,Lisa Park,North,paid
+2024-11-08,Soylent Inc,Hardware Bundle,Hardware,5,1200.00,6000.00,Sarah Connor,West,overdue
+2024-11-12,Acme Corporation,Data Analytics Package,Software,2,8500.00,17000.00,John Smith,North,paid
+2024-11-15,Gekko & Associates,Consulting Hours,Services,32,250.00,8000.00,Mike Torres,East,paid
+2024-11-19,Initech Ltd,Premium Support,Services,1,5000.00,5000.00,Lisa Park,East,paid
+2024-11-22,Weyland Industries,Enterprise License,Software,12,4200.00,50400.00,Sarah Connor,South,paid
+2024-11-26,Cyberdyne Systems,Hardware Bundle,Hardware,20,1200.00,24000.00,John Smith,North,pending
+2024-12-02,Globex Corp,Enterprise License,Software,6,4200.00,25200.00,Mike Torres,West,paid
+2024-12-05,Acme Corporation,Premium Support,Services,1,5000.00,5000.00,Lisa Park,North,paid
+2024-12-09,Weyland Industries,Consulting Hours,Services,80,250.00,20000.00,Sarah Connor,South,paid
+2024-12-11,Umbrella Corp,Enterprise License,Software,4,4200.00,16800.00,John Smith,South,paid
+2024-12-13,Soylent Inc,Data Analytics Package,Software,1,8500.00,8500.00,Mike Torres,West,overdue
+2024-12-17,Initech Ltd,Consulting Hours,Services,16,250.00,4000.00,Lisa Park,East,paid
+2024-12-19,Gekko & Associates,Hardware Bundle,Hardware,8,1200.00,9600.00,Sarah Connor,East,paid
+2024-12-23,Cyberdyne Systems,Premium Support,Services,1,5000.00,5000.00,John Smith,North,pending
+2024-12-28,Weyland Industries,Data Analytics Package,Software,3,8500.00,25500.00,Mike Torres,South,paid
