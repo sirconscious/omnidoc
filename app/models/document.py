@@ -26,6 +26,11 @@ def get_document(doc_id):
     result = execute_query(query, (str(doc_id),), fetch=True)
     return result[0] if result else None
 
+def get_document_by_filename(filename, collection_id):
+    query = "SELECT * FROM documents WHERE filename = %s AND collection_id = %s ORDER BY created_at DESC LIMIT 1"
+    result = execute_query(query, (filename, str(collection_id)), fetch=True)
+    return result[0] if result else None
+
 def get_all_pending():
     query = "SELECT * FROM documents WHERE status = 'pending'"
     return execute_query(query, fetch=True)

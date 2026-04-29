@@ -20,7 +20,7 @@ except ImportError:
     HAS_PDF = False
 
 from app.storage.minio_client import upload_file as minio_upload
-from app.models.document    import insert_document, update_status
+from app.models.document    import insert_document, update_status, get_document_by_filename
 from app.indexing.es_indexer import index_document_chunks
 
 
@@ -258,16 +258,16 @@ def build_document_json(
     }
 
 
-def ingest(file_path_str: str) -> None:
-    """Main ingestion pipeline."""
+def ingest(file_path_str: str) -> str:
+    """Main ingestion pipeline. Returns 'success', 'skipped', or 'error'."""
     file_path = Path(file_path_str).expanduser().resolve()
     
     if not file_path.exists():
         logger.error(f"File not found: {file_path}")
-        return
+        return "error"
     if not file_path.is_file():
         logger.error(f"Path is not a file: {file_path}")
-        return
+        return "error"
     
     filename  = file_path.name
     file_type = file_path.suffix.lstrip(".").lower() or "bin"
@@ -276,9 +276,14 @@ def ingest(file_path_str: str) -> None:
     mime_type = mime_type or "application/octet-stream"
     doc_id    = str(uuid.uuid4())
     
-    logger.info(f"\nIngesting: {filename}  ({file_size:,} bytes)")
-    
     collection_id = "acf3a192-c113-4ae3-acba-994d300419dd"
+
+    existing = get_document_by_filename(filename, collection_id)
+    if existing:
+        logger.info(f"  ⏭ Already exists (id={existing['id']}, status={existing['status']}), skipping...")
+        return "skipped"
+    
+    logger.info(f"\nIngesting: {filename}  ({file_size:,} bytes)")
     
     logger.info("[1/5] Uploading raw file → MinIO ...")
     file_bytes  = file_path.read_bytes()
@@ -330,6 +335,7 @@ def ingest(file_path_str: str) -> None:
         logger.info(f"       JSON → parsed/{db_id}/{filename}.json")
         logger.info(f"       Chunks: {len(doc_json['chunks'])}")
         logger.info(f"       ES chunks indexed: {es_result['indexed']}")
+        return "success"
     
     except Exception as exc:
         update_status(db_id, "error", str(exc))
@@ -337,7 +343,63 @@ def ingest(file_path_str: str) -> None:
         raise
 
 
+SUPPORTED_EXTENSIONS = {".pdf", ".csv", ".docx", ".txt", ".md", ".json"}
+
+
+def ingest_directory(dir_path_str: str) -> None:
+    """Ingest all supported files in a directory (non-recursive)."""
+    dir_path = Path(dir_path_str).expanduser().resolve()
+
+    if not dir_path.exists():
+        logger.error(f"Directory not found: {dir_path}")
+        return
+    if not dir_path.is_dir():
+        logger.error(f"Path is not a directory: {dir_path}")
+        return
+
+    files = [f for f in dir_path.iterdir() if f.is_file() and f.suffix.lower() in SUPPORTED_EXTENSIONS]
+
+    if not files:
+        logger.info(f"No supported files found in {dir_path}")
+        logger.info(f"Supported types: {', '.join(sorted(SUPPORTED_EXTENSIONS))}")
+        return
+
+    files.sort(key=lambda f: f.name)
+
+    logger.info(f"\nFound {len(files)} supported file(s) in {dir_path}")
+
+    succeeded = 0
+    failed = 0
+    skipped = 0
+
+    for i, file_path in enumerate(files, 1):
+        logger.info(f"\n{'='*60}")
+        logger.info(f"[{i}/{len(files)}] Processing: {file_path.name}")
+        logger.info(f"{'='*60}")
+        try:
+            result = ingest(str(file_path))
+            if result == "skipped":
+                skipped += 1
+            elif result == "success":
+                succeeded += 1
+            else:
+                failed += 1
+        except Exception as exc:
+            logger.error(f"Failed to ingest {file_path.name}: {exc}")
+            failed += 1
+
+    logger.info(f"\n{'='*60}")
+    logger.info(f"Summary: {succeeded} succeeded, {skipped} skipped, {failed} failed")
+    logger.info(f"{'='*60}")
+
+
 if __name__ == "__main__":
     print("=== Document Ingestion Pipeline ===")
-    path = input("Enter the path to the file you want to upload: ").strip()
-    ingest(path)
+    choice = input("Process a single (f)ile or (d)irectory? [f/d]: ").strip().lower()
+
+    if choice == "d":
+        dir_path = input("Enter the directory path: ").strip()
+        ingest_directory(dir_path)
+    else:
+        file_path = input("Enter the file path: ").strip()
+        ingest(file_path)
