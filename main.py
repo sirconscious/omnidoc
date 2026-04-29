@@ -21,6 +21,7 @@ except ImportError:
 
 from app.storage.minio_client import upload_file as minio_upload
 from app.models.document    import insert_document, update_status
+from app.indexing.es_indexer import index_document_chunks
 
 
 CHUNK_OVERLAP_SENTENCES = 2
@@ -279,12 +280,12 @@ def ingest(file_path_str: str) -> None:
     
     collection_id = "acf3a192-c113-4ae3-acba-994d300419dd"
     
-    logger.info("[1/4] Uploading raw file → MinIO ...")
+    logger.info("[1/5] Uploading raw file → MinIO ...")
     file_bytes  = file_path.read_bytes()
     minio_key = f"raw/{collection_id}/{doc_id}/{filename}"
     minio_path  = minio_upload(file_bytes, minio_key, mime_type)
     
-    logger.info("[2/4] Inserting metadata → PostgreSQL ...")
+    logger.info("[2/5] Inserting metadata → PostgreSQL ...")
     db_id = insert_document(
         filename,
         file_type,
@@ -294,7 +295,7 @@ def ingest(file_path_str: str) -> None:
     )
     
     try:
-        logger.info("[3/4] Extracting text & building JSON ...")
+        logger.info("[3/5] Extracting text & building JSON ...")
         raw_text, extra_meta, parser_chunks = extract_text(file_path, file_type)
         
         doc_json = build_document_json(
@@ -307,16 +308,28 @@ def ingest(file_path_str: str) -> None:
             parser_chunks = parser_chunks,
         )
         
-        logger.info("[4/4] Uploading parsed JSON → MinIO ...")
+        logger.info("[4/5] Uploading parsed JSON → MinIO ...")
         json_bytes   = json.dumps(doc_json, ensure_ascii=False, indent=2).encode("utf-8")
         json_key = f"parsed/{collection_id}/{db_id}/{file_path.stem}.json"
         minio_upload(json_bytes, json_key, "application/json")
-        
-        update_status(db_id, "processed")
+
+        logger.info("[5/5] Indexing chunks → Elasticsearch ...")
+        es_result = index_document_chunks(
+            doc_id=str(db_id),
+            collection_id=collection_id,
+            filename=filename,
+            file_type=file_type,
+            chunks=doc_json["chunks"],
+        )
+        if es_result["failed"] > 0:
+            logger.warning(f"ES indexing had {es_result['failed']} chunk failures")
+
+        update_status(db_id, "indexed")
         logger.info(f"\nDone! DB id={db_id}")
         logger.info(f"       Raw  → {minio_path}")
         logger.info(f"       JSON → parsed/{db_id}/{filename}.json")
         logger.info(f"       Chunks: {len(doc_json['chunks'])}")
+        logger.info(f"       ES chunks indexed: {es_result['indexed']}")
     
     except Exception as exc:
         update_status(db_id, "error", str(exc))

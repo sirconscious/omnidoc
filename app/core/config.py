@@ -15,3 +15,8 @@ POSTGRES_PORT     = os.getenv("POSTGRES_PORT", "5432")
 POSTGRES_USER     = os.getenv("POSTGRES_USER")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
 POSTGRES_DB       = os.getenv("POSTGRES_DB")
+
+# Elasticsearch
+ES_HOST     = os.getenv("ES_HOST", "https://localhost:9200")
+ES_USER     = os.getenv("ES_USER", "elastic")
+ES_PASSWORD = os.getenv("ES_PASSWORD")
