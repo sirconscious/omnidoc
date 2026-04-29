@@ -1,9 +1,11 @@
 import logging
+import re
 from pathlib import Path
 from typing import Tuple, List, Dict, Any
 
 logger = logging.getLogger(__name__)
 MIN_WORDS_PER_CHUNK = 20
+MAX_WORDS_PER_CHUNK = 200
 
 try:
     import pdfplumber
@@ -156,6 +158,55 @@ def _filter_small_chunks(chunks: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return filtered
 
 
+def _chunk_single_page(text: str, max_words: int = 100) -> List[Dict[str, Any]]:
+    """Split single-page text into line-aware chunks."""
+    lines = text.split("\n")
+    
+    chunks = []
+    current_chunk_lines = []
+    current_words = 0
+    
+    for line in lines:
+        line_words = len(line.split())
+        if line_words == 0:
+            continue
+        
+        if current_words + line_words > max_words and current_chunk_lines:
+            chunk_text = "\n".join(current_chunk_lines)
+            lines_stripped = [l.strip() for l in chunk_text.split("\n") if l.strip()]
+            section = lines_stripped[0][:100] if lines_stripped else None
+            
+            chunks.append({
+                "index": len(chunks),
+                "text": chunk_text,
+                "source_page": 1,
+                "source_section": section,
+                "has_table": _has_table_in_text(chunk_text),
+                "word_count": len(chunk_text.split()),
+            })
+            current_chunk_lines = []
+            current_words = 0
+        
+        current_chunk_lines.append(line)
+        current_words += line_words
+    
+    if current_chunk_lines:
+        chunk_text = "\n".join(current_chunk_lines)
+        lines_stripped = [l.strip() for l in chunk_text.split("\n") if l.strip()]
+        section = lines_stripped[0][:100] if lines_stripped else None
+        
+        chunks.append({
+            "index": len(chunks),
+            "text": chunk_text,
+            "source_page": 1,
+            "source_section": section,
+            "has_table": _has_table_in_text(chunk_text),
+            "word_count": len(chunk_text.split()),
+        })
+    
+    return chunks
+
+
 def parse_pdf(file_path: Path) -> Tuple[str, Dict[str, Any], List[Dict[str, Any]]]:
     """Parse a PDF file with enhanced extraction."""
     if not HAS_PDFPLUMBER:
@@ -220,6 +271,11 @@ def parse_pdf(file_path: Path) -> Tuple[str, Dict[str, Any], List[Dict[str, Any]
     
     if metadata["has_ocr_pages"]:
         metadata["ocr_pages"] = ocr_pages
+    
+    # Special handling for single-page PDFs with substantial content
+    if len(pdf.pages) == 1 and len(chunks) == 1 and chunks[0]["word_count"] > 200:
+        logger.info(f"Single-page PDF with {chunks[0]['word_count']} words - splitting into {len(_chunk_single_page(chunks[0]['text']))} chunks")
+        chunks = _chunk_single_page(chunks[0]["text"])
     
     # Note: filtering now handled in main.py after overlap
     # chunks = _filter_small_chunks(chunks)
