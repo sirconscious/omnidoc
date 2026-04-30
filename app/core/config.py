@@ -20,3 +20,7 @@ POSTGRES_DB       = os.getenv("POSTGRES_DB")
 ES_HOST     = os.getenv("ES_HOST", "https://localhost:9200")
 ES_USER     = os.getenv("ES_USER", "elastic")
 ES_PASSWORD = os.getenv("ES_PASSWORD")
+
+# Qdrant
+QDRANT_HOST = os.getenv("QDRANT_HOST", "localhost")
+QDRANT_PORT = os.getenv("QDRANT_PORT", "6333")

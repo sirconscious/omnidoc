@@ -9,3 +9,7 @@ minio
 pytesseract
 Pillow
 pdf2image
+
+# Embeddings and vector search
+sentence-transformers
+qdrant-client

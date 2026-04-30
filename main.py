@@ -22,6 +22,7 @@ except ImportError:
 from app.storage.minio_client import upload_file as minio_upload
 from app.models.document    import insert_document, update_status, get_document_by_filename
 from app.indexing.es_indexer import index_document_chunks
+from app.indexing.qdrant_indexer import index_chunks as qdrant_index_chunks
 
 
 CHUNK_OVERLAP_SENTENCES = 2
@@ -328,6 +329,15 @@ def ingest(file_path_str: str) -> str:
         )
         if es_result["failed"] > 0:
             logger.warning(f"ES indexing had {es_result['failed']} chunk failures")
+
+        logger.info("[6/6] Indexing chunks → Qdrant (vector search) ...")
+        qdrant_index_chunks(
+            doc_id=str(db_id),
+            filename=filename,
+            collection_id=collection_id,
+            chunks=doc_json["chunks"],
+        )
+        logger.info(f"       Qdrant chunks indexed: {len(doc_json['chunks'])}")
 
         update_status(db_id, "indexed")
         logger.info(f"\nDone! DB id={db_id}")
