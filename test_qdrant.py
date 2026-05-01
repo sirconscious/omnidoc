@@ -7,6 +7,8 @@ query = "java developer"
 
 vector = embed(query)
 
+# client.delete_collection(collection_name="documents")
+
 results = client.query_points(
     collection_name="documents",
     query=vector,
