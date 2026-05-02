@@ -6,7 +6,7 @@ from app.indexing.embeddings import batch_embed
 from app.indexing.qdrant_client import get_qdrant_client
 
 COLLECTION_NAME: str = "documents"
-VECTOR_SIZE: int = 384
+VECTOR_SIZE: int = 768
 DISTANCE = Distance.COSINE
 
 def _ensure_collection(client: QdrantClient) -> None:

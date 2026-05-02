@@ -3,10 +3,13 @@ from typing import List, Optional
 
 _MODEL: Optional[SentenceTransformer] = None
 
+# Upgrade: all-mpnet-base-v2 (768 dims) for better semantic accuracy
+MODEL_NAME = "sentence-transformers/all-mpnet-base-v2"
+
 def _get_model() -> SentenceTransformer:
     global _MODEL
     if _MODEL is None:
-        _MODEL = SentenceTransformer("all-MiniLM-L6-v2")
+        _MODEL = SentenceTransformer(MODEL_NAME)
     return _MODEL
 
 def embed(text: str) -> List[float]:
